@@ -11,6 +11,7 @@ def parse_arguments(**kwargs):
     # parser.add_argument('path', help='Absolute\\Path\\To\\Statement.pdf')
     parser.add_argument('-vb', '--verbose', help='Turn on verbose debugging', action='store_true',
                         default=False)
+    parser.add_argument('statement', help='Absolute\\Path\\To\\Statement.pdf')
     args = parser.parse_args()
     log_fmt = '%(asctime)s LINE:%(lineno)d LEVEL:%(levelname)s %(message)s'
     args.verbose = kwargs.get('verbose_logs', False)
@@ -32,8 +33,10 @@ def parse_arguments(**kwargs):
 def main():
     cmd_args = parse_arguments(verbose_logs=True)
     logging.debug('Hello world!')
-    statement_parser = process_statement.ProcessStatement()
-
+    statement_parser = process_statement.ProcessStatement(cmd_args.statement)
+    statement_parser.read_pdf_file()
+    statement_parser.get_page_numbers()
+    statement_parser.print_pdf_page(3)
 
 
 if __name__ == '__main__':
