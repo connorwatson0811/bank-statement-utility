@@ -9,6 +9,7 @@ import logging
 def parse_arguments(**kwargs):
     parser = argparse.ArgumentParser(description='This script tries to read in a PDF statement.')
     # parser.add_argument('path', help='Absolute\\Path\\To\\Statement.pdf')
+    parser.add_argument('-pn', '--page', help='Read just one page', default=-1, type=int)
     parser.add_argument('-ra', '--raw', help='Store PDF pages in order it appears in content stream via pdftotext',
                         action='store_true', default=False)
     parser.add_argument('-ph', '--phy', help='Store PDF pages in order it appears regardless of format via pdftotext',
@@ -36,15 +37,16 @@ def parse_arguments(**kwargs):
 
 def main():
     cmd_args = parse_arguments(verbose_logs=True)
+    p_num = int(cmd_args.page)
     logging.debug('Hello world!')
     statement_parser = process_statement.ProcessStatement(cmd_args.statement, raw=cmd_args.raw, physical=cmd_args.phy)
     statement_parser.read_pdf_file()
     statement_parser.get_page_numbers()
-    p_num = 3
     #statement_parser.print_pdf_page(p_num)
     # statement_parser.pretty_print_page(3)
     #print(help(pdftotext))
-    statement_parser.write_page_to_txt_file(p_num, f'C:\\Users\\watson\\Documents\\DataSets\\page_{p_num}.txt')
+    if p_num > 0:
+        statement_parser.write_page_to_txt_file(p_num, f'C:\\Users\\watson\\Documents\\DataSets\\page_{p_num}.txt')
 
 
 if __name__ == '__main__':
