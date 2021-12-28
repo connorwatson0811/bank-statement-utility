@@ -37,6 +37,9 @@ class ProcessStatement:
             print(line)
 
     def get_page_numbers(self):
+        return list(sorted(self.pages.keys()))
+
+    def print_page_numbers(self):
         for pagenum in sorted(self.pages.keys()):
             print('Page {}/{}'.format(pagenum, len(self.pages.keys())))
 
