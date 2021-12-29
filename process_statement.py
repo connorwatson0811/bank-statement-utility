@@ -9,7 +9,6 @@ class ProcessStatement:
     """This class contains all the processing functions for one PDF statement (specific to one particular bank)"""
 
     def __init__(self, pdfpath, **kwargs):
-        logging.debug('Inside Process Statement')
         self.pdfpath = pdfpath
         self.pages = {}
         self.pdf_raw_output = kwargs.get('raw', False)

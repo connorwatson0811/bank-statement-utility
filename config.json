@@ -1,0 +1,9 @@
+{
+  "example_json": "This is only the template, please configure variables properly",
+  "statements_path": "C:\\Path\\To\\AllStatements",
+  "output_directory": "C:\\Path\\To\\OutputDirectory",
+  "page_numbers_to_read": -1,
+  "raw_pdf_content": false,
+  "physical_pdf_content": true,
+  "verbose_logging": true
+}
