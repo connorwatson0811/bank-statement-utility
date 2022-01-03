@@ -1,6 +1,7 @@
 import logging
 import sys
 import re
+import pandas as pd
 import pdftotext
 # logging.getLogger('statement_logging')
 
@@ -14,6 +15,9 @@ class ProcessStatement:
         self.pages = {}
         self.pdf_raw_output = kwargs.get('raw', False)
         self.pdf_phy_output = kwargs.get('physical', False)
+        self.bank_type = kwargs.get('bank_type', 'BoA')
+        self.transactions = {'Date':[], 'Description': [], 'Amount': []}
+        self.transactions_df = None
 
     def read_pdf_file(self):
         try:
@@ -28,6 +32,7 @@ class ProcessStatement:
             sys.exit(0)
         for pagenum in range(len(pdf)):
             self.pages[pagenum + 1] = pdf[pagenum]
+        logging.info(f'Processing {self.pdfpath}')
 
     def print_pdf_page(self, pagenum):
         logging.info(self.pages[pagenum])
@@ -51,8 +56,13 @@ class ProcessStatement:
             of.write(self.get_pdf_page(pagenum))
 
     def process_pdf_page(self, page_num):
+        current_page_lines = self.get_pdf_page(page_num).split('\n')
+        if self.bank_type == 'BoA':
+            self.process_pdf_page_boa(current_page_lines, page_num)
+
+    def process_pdf_page_boa(self, current_page_lines, pnum):
         num_line_with_transactions = 0
-        for line in self.get_pdf_page(page_num).split('\n'):
+        for line in current_page_lines:
             try:
                 int(line[0])
             except ValueError as ve:
@@ -67,8 +77,28 @@ class ProcessStatement:
                 transaction_regex = r"-?([0-9]+,?)+\.[0-9][0-9]"
                 transaction_amount = re.search(transaction_regex, line_temp).group()
                 transaction_description = re.sub(transaction_regex, "", line_temp).strip()
-                logging.debug(f'{transaction_date} | {transaction_amount} | {transaction_description}')
-        logging.info(f'Total {num_line_with_transactions} lines with transactions')
+                self.add_transaction_to_data_dictionary(transaction_date,
+                                                        transaction_description,
+                                                        transaction_amount)
+        if num_line_with_transactions == 0:
+            logging.debug(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+        else:
+            logging.info(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
 
+    def add_transaction_to_data_dictionary(self, date, desc, amount):
+        logging.debug(f'{date} | {amount} | {desc}')
+        self.transactions['Date'].append(date)
+        self.transactions['Description'].append(desc)
+        self.transactions['Amount'].append(amount)
+
+    def set_dataframe_from_data_dictionary(self):
+        self.transactions_df = pd.DataFrame.from_dict(data=self.transactions)
+
+    def save_transactions_df_to_csv(self, out_file):
+        try:
+            self.transactions_df.to_csv(out_file)
+            logging.info(f'Saved transactions to {out_file}')
+        except Exception as e:
+            logging.error(e)
 
 

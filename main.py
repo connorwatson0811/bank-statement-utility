@@ -84,25 +84,30 @@ def main():
         statement_path = filepath.absolute()
         fname = os.path.basename(statement_path).split(".")[0]
         if os.path.isdir(os.path.abspath(statement_path)):
+            logging.info('Found a directory, skipping...')
             continue
         statement_parser = process_statement.ProcessStatement(statement_path,
                                                               raw=config['raw_pdf_content'],
                                                               physical=config['physical_pdf_content'])
-        logger.debug(statement_path)
         statement_parser.read_pdf_file()
         page_numbers = statement_parser.get_page_numbers()
         if p_num_check > 0:
-            logger.debug(f'Processing page #{p_num_check} only')
-            output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{p_num_check}.txt'))
-            logger.debug(f'Writing page #{p_num_check} only to {output_file_name}')
-            statement_parser.write_page_to_txt_file(p_num_check, output_file_name)
+            # logger.info(f'Processing page #{p_num_check} only')
+            output_pagefile_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{p_num_check}.txt'))
+            logger.debug(f'Writing page #{p_num_check} only to {output_pagefile_name}')
+            # statement_parser.write_page_to_txt_file(p_num_check, output_pagefile_name)
             statement_parser.process_pdf_page(p_num_check)
         else:
-            logger.debug(f'Will process all pages of the document')
+            # logger.info(f'Will process all pages of the document')
             for page_num in page_numbers:
-                output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{page_num}.txt'))
-                logger.debug(f'Writing page #{page_num} to {output_file_name}')
-                statement_parser.write_page_to_txt_file(page_num, output_file_name)
+                output_pagefile_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{page_num}.txt'))
+                logger.debug(f'Writing page #{page_num} to {output_pagefile_name}')
+                # statement_parser.write_page_to_txt_file(page_num, output_pagefile_name)
+                statement_parser.process_pdf_page(page_num)
+        statement_parser.set_dataframe_from_data_dictionary()
+        output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_transactions.csv'))
+        statement_parser.save_transactions_df_to_csv(output_file_name)
+        logging.info(f'Finished parsing statements, please check {out_dir}')
 
 
 if __name__ == '__main__':
