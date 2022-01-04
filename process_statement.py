@@ -6,6 +6,14 @@ import pdftotext
 # logging.getLogger('statement_logging')
 
 
+def is_transaction_a_check(transaction_description: str):
+    try:
+        int(transaction_description)
+        return f"Check Number {transaction_description}"
+    except ValueError as ve:
+        return transaction_description
+
+
 class ProcessStatement:
 
     """This class contains all the processing functions for one PDF statement (specific to one particular bank)"""
@@ -76,7 +84,7 @@ class ProcessStatement:
                 logging.debug(line_temp)
                 transaction_regex = r"-?([0-9]+,?)+\.[0-9][0-9]"
                 transaction_amount = re.search(transaction_regex, line_temp).group()
-                transaction_description = re.sub(transaction_regex, "", line_temp).strip()
+                transaction_description = is_transaction_a_check(re.sub(transaction_regex, "", line_temp).strip())
                 self.add_transaction_to_data_dictionary(transaction_date,
                                                         transaction_description,
                                                         transaction_amount)
@@ -94,11 +102,11 @@ class ProcessStatement:
     def set_dataframe_from_data_dictionary(self):
         self.transactions_df = pd.DataFrame.from_dict(data=self.transactions)
 
-    def save_transactions_df_to_csv(self, out_file):
+    def save_transactions_df_to_csv(self, out_file, transactions_df=None):
+        if transactions_df is None:
+            transactions_df = self.transactions_df
         try:
-            self.transactions_df.to_csv(out_file)
+            transactions_df.to_csv(out_file)
             logging.info(f'Saved transactions to {out_file}')
         except Exception as e:
             logging.error(e)
-
-

@@ -1,3 +1,4 @@
+import pandas as pd
 import pdftotext
 import process_statement
 import argparse
@@ -77,9 +78,13 @@ def main():
     config = json.load(open(in_args.config))
     p_num_check = int(config['page_numbers_to_read'])
     out_dir = config['output_directory']
+    condense_output = config['condense_output']
+    file_prefix = config['condensed_filename_prefix']
+    condensed_all_transactions = {'Date': [], 'Description': [], 'Amount': []}
     logger.debug(f'Output directory is: {out_dir}')
     if not os.path.exists(config['output_directory']):
         os.mkdir(config['output_directory'])
+
     for filepath in pathlib.Path(config['statements_path']).glob('**/*'):
         statement_path = filepath.absolute()
         fname = os.path.basename(statement_path).split(".")[0]
@@ -105,8 +110,22 @@ def main():
                 # statement_parser.write_page_to_txt_file(page_num, output_pagefile_name)
                 statement_parser.process_pdf_page(page_num)
         statement_parser.set_dataframe_from_data_dictionary()
-        output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_transactions.csv'))
-        statement_parser.save_transactions_df_to_csv(output_file_name)
+        if not condense_output:
+            output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_transactions.csv'))
+            statement_parser.save_transactions_df_to_csv(output_file_name)
+        else:
+            condensed_all_transactions['Date'] += statement_parser.transactions['Date']
+            condensed_all_transactions['Description'] += statement_parser.transactions['Description']
+            condensed_all_transactions['Amount'] += statement_parser.transactions['Amount']
+    if condense_output:
+        output_file_name = os.path.abspath(os.path.join(out_dir, f'{file_prefix}_transactions.csv'))
+        condensed_all_transactions_df = pd.DataFrame.from_dict(condensed_all_transactions)
+        try:
+            condensed_all_transactions_df.to_csv(output_file_name)
+            logging.info(f'Saved transactions to {output_file_name}')
+        except Exception as e:
+            logging.error(e)
+
         logging.info(f'Finished parsing statements, please check {out_dir}')
 
 
