@@ -23,8 +23,9 @@ class ProcessStatement:
         self.pages = {}
         self.pdf_raw_output = kwargs.get('raw', False)
         self.pdf_phy_output = kwargs.get('physical', False)
-        self.bank_type = kwargs.get('bank_type', 'BoA')
-        self.transactions = {'Date':[], 'Description': [], 'Amount': []}
+        self.bank_type = kwargs.get('bank_type', 'boa')
+        self.categories = kwargs.get('categories', None)
+        self.transactions = {'Date':[], 'Description': [], 'Amount': [], 'Category': []}
         self.transactions_df = None
 
     def read_pdf_file(self):
@@ -65,12 +66,55 @@ class ProcessStatement:
 
     def process_pdf_page(self, page_num):
         current_page_lines = self.get_pdf_page(page_num).split('\n')
-        if self.bank_type == 'BoA':
+        if self.bank_type == 'boa':
             self.process_pdf_page_boa(current_page_lines, page_num)
+        elif self.bank_type == 'chase':
+            self.process_pdf_page_chase(current_page_lines, page_num)
+
+    def process_pdf_page_chase(self, current_page_lines, pnum):
+        num_line_with_transactions = 0
+        deposit_or_withdrawal = ""
+        for line in current_page_lines:
+            line = line.strip()
+            if "deposits" in line.lower():
+                deposit_or_withdrawal = ""
+            elif "withdrawals" in line.lower():
+                deposit_or_withdrawal = "-"
+            try:
+                int(line[0])
+            except ValueError as ve:
+                continue
+            except Exception as e:
+                continue
+            if re.search("[0-9][0-9]/[0-9][0-9]", line[:5]) and len(line) > 10:
+                num_line_with_transactions += 1
+                transaction_date = line[:8]
+                line_temp = line[8:]
+                transaction_regex = r"\$?([0-9]+,?)+\.[0-9][0-9]"
+                # try:
+                transaction_amount = deposit_or_withdrawal + re.search(transaction_regex, line_temp).group().strip("$")
+                # except AttributeError as ae:
+                #     logging.debug(transaction_date)
+                #     logging.debug(line_temp)
+                #     logging.debug(line)
+                #     logging.debug(line[:8])
+                #     sys.exit(0)
+
+                transaction_description = is_transaction_a_check(re.sub(transaction_regex, "", line_temp).strip())
+                transaction_category = self.assign_category_to_transaction(transaction_description)
+                self.add_transaction_to_data_dictionary(transaction_date,
+                                                        transaction_description,
+                                                        transaction_amount,
+                                                        transaction_category)
+        if num_line_with_transactions == 0:
+            logging.debug(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+        else:
+            logging.info(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
 
     def process_pdf_page_boa(self, current_page_lines, pnum):
         num_line_with_transactions = 0
         for line in current_page_lines:
+            line = line.strip()
             try:
                 int(line[0])
             except ValueError as ve:
@@ -85,19 +129,34 @@ class ProcessStatement:
                 transaction_regex = r"-?([0-9]+,?)+\.[0-9][0-9]"
                 transaction_amount = re.search(transaction_regex, line_temp).group()
                 transaction_description = is_transaction_a_check(re.sub(transaction_regex, "", line_temp).strip())
+                transaction_category = self.assign_category_to_transaction(transaction_description)
                 self.add_transaction_to_data_dictionary(transaction_date,
                                                         transaction_description,
-                                                        transaction_amount)
+                                                        transaction_amount,
+                                                        transaction_category)
         if num_line_with_transactions == 0:
             logging.debug(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
         else:
             logging.info(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
 
-    def add_transaction_to_data_dictionary(self, date, desc, amount):
-        logging.debug(f'{date} | {amount} | {desc}')
+    def assign_category_to_transaction(self, desc):
+        desc_lower = desc.lower()
+        if self.categories is not None:
+            for category in self.categories:
+                for category_phrase in self.categories[category]:
+                    if category_phrase in desc_lower:
+                        return category
+            self.categories['other'].append(desc_lower.strip())
+            return "other"
+        else:
+            return "transaction"
+
+    def add_transaction_to_data_dictionary(self, date, desc, amount, catg):
+        logging.debug(f'{date} | {amount} | {desc} | {catg}')
         self.transactions['Date'].append(date)
         self.transactions['Description'].append(desc)
         self.transactions['Amount'].append(amount)
+        self.transactions['Category'].append(catg)
 
     def set_dataframe_from_data_dictionary(self):
         self.transactions_df = pd.DataFrame.from_dict(data=self.transactions)

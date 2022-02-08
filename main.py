@@ -80,7 +80,9 @@ def main():
     out_dir = config['output_directory']
     condense_output = config['condense_output']
     file_prefix = config['condensed_filename_prefix']
-    condensed_all_transactions = {'Date': [], 'Description': [], 'Amount': []}
+    transaction_categories = config['categories']
+    bank_type = config['bank_type']
+    condensed_all_transactions = {'Date': [], 'Description': [], 'Amount': [], 'Category': []}
     logger.debug(f'Output directory is: {out_dir}')
     if not os.path.exists(config['output_directory']):
         os.mkdir(config['output_directory'])
@@ -93,9 +95,12 @@ def main():
             continue
         statement_parser = process_statement.ProcessStatement(statement_path,
                                                               raw=config['raw_pdf_content'],
-                                                              physical=config['physical_pdf_content'])
+                                                              physical=config['physical_pdf_content'],
+                                                              categories=transaction_categories,
+                                                              bank_type=bank_type)
         statement_parser.read_pdf_file()
         page_numbers = statement_parser.get_page_numbers()
+        #logging.info(page_numbers)
         if p_num_check > 0:
             # logger.info(f'Processing page #{p_num_check} only')
             output_pagefile_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{p_num_check}.txt'))
@@ -103,7 +108,7 @@ def main():
             # statement_parser.write_page_to_txt_file(p_num_check, output_pagefile_name)
             statement_parser.process_pdf_page(p_num_check)
         else:
-            # logger.info(f'Will process all pages of the document')
+            #logger.info(f'Will process all pages of the document')
             for page_num in page_numbers:
                 output_pagefile_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{page_num}.txt'))
                 logger.debug(f'Writing page #{page_num} to {output_pagefile_name}')
@@ -117,6 +122,8 @@ def main():
             condensed_all_transactions['Date'] += statement_parser.transactions['Date']
             condensed_all_transactions['Description'] += statement_parser.transactions['Description']
             condensed_all_transactions['Amount'] += statement_parser.transactions['Amount']
+            condensed_all_transactions['Category'] += statement_parser.transactions['Category']
+        transaction_categories = statement_parser.categories
     if condense_output:
         output_file_name = os.path.abspath(os.path.join(out_dir, f'{file_prefix}_transactions.csv'))
         condensed_all_transactions_df = pd.DataFrame.from_dict(condensed_all_transactions)
@@ -127,6 +134,13 @@ def main():
             logging.error(e)
 
         logging.info(f'Finished parsing statements, please check {out_dir}')
+
+    config['categories'] = transaction_categories
+    updated_config_path = in_args.config.replace('config', 'updated_config')
+    f = open(updated_config_path, 'w')
+    json.dump(config, f, indent=2) #\t
+    f.close()
+    logging.info(f'Saved updated config to: {updated_config_path}')
 
 
 if __name__ == '__main__':
