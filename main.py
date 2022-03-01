@@ -97,7 +97,8 @@ def main():
                                                               raw=config['raw_pdf_content'],
                                                               physical=config['physical_pdf_content'],
                                                               categories=transaction_categories,
-                                                              bank_type=bank_type)
+                                                              bank_type=bank_type,
+                                                              year_of_statements=config['year_of_statements'])
         statement_parser.read_pdf_file()
         page_numbers = statement_parser.get_page_numbers()
         #logging.info(page_numbers)

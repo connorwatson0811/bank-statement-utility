@@ -27,6 +27,7 @@ class ProcessStatement:
         self.categories = kwargs.get('categories', None)
         self.transactions = {'Date':[], 'Description': [], 'Amount': [], 'Category': []}
         self.transactions_df = None
+        self.year_of_statements = kwargs.get('year_of_statements', '2022')
 
     def read_pdf_file(self):
         try:
@@ -88,7 +89,7 @@ class ProcessStatement:
                 continue
             if re.search("[0-9][0-9]/[0-9][0-9]", line[:5]) and len(line) > 10:
                 num_line_with_transactions += 1
-                transaction_date = line[:8]
+                transaction_date = f"{line[:8].strip()}/{self.year_of_statements}"
                 line_temp = line[8:]
                 transaction_regex = r"\$?([0-9]+,?)+\.[0-9][0-9]"
                 # try:
