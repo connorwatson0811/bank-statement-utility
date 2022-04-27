@@ -8,6 +8,17 @@ into this effort (and help quickly get my finances together) I want to start
 fresh with as little tasks needed as possible. From there, I will expand to
 include the work we were doing, and more.
 
+# Resulting Dashboard After ETL
+[Link to Tableau Public Dashboard](https://public.tableau.com/views/MyBudgetHighLevel/Budget?:language=en-US&:display_count=n&:origin=viz_share_link)
+
+![Sample Dashboard on Tableau Public](https://github.com/cww5/bank-statement-utility/blob/main/Images/Example%20Dashboard.JPG)
+
+# Considerations for Future
+- Mint API for interfacing directly with bank accounts for streaming data instead of batch processing
+- Set up SQL server DB to store data (instead of local files)
+- Set up front end to allow for 1) users and 2) directly interfacing with data
+- Set up user accounts to interface with web portal and SQL Server DB
+
 # Known Issues
 During installation, it is known that installing pdftotext can cause some issues. There are known solutions at the following links:
 [Stackoverflow](https://stackoverflow.com/a/58139729)
