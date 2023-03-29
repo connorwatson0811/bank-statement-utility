@@ -18,9 +18,10 @@ class ProcessStatement:
 
     """This class contains all the processing functions for one PDF statement (specific to one particular bank)"""
 
-    def __init__(self, pdfpath, **kwargs):
-        self.pdfpath = pdfpath
+    def __init__(self, **kwargs):
         self.pages = {}
+        self.pdfpath = kwargs.get('pdfpath', None)
+        self.pdffileobject = kwargs.get('pdffileobject', None)
         self.pdf_raw_output = kwargs.get('raw', False)
         self.pdf_phy_output = kwargs.get('physical', False)
         self.bank_type = kwargs.get('bank_type', 'boa')
@@ -31,18 +32,26 @@ class ProcessStatement:
 
     def read_pdf_file(self):
         try:
-            with open(self.pdfpath, 'rb') as f:
-                pdf = pdftotext.PDF(f, raw=self.pdf_raw_output, physical=self.pdf_phy_output)
+            if self.pdfpath is not None:
+                with open(self.pdfpath, 'rb') as f:
+                    pdf = pdftotext.PDF(f, raw=self.pdf_raw_output, physical=self.pdf_phy_output)
+            elif self.pdffileobject is not None:
+                #with open(self.pdffileobject, 'rb') as f:
+                #pdf_file = self.pdffileobject.read()
+                pdf = pdftotext.PDF(self.pdffileobject, raw=self.pdf_raw_output, physical=self.pdf_phy_output)
         except FileNotFoundError as fe:
             logging.error('File not found with path: ' + self.pdfpath)
-            sys.exit(0)
+            return None
         except Exception as e:
             logging.error('Unexpected error occured!')
             logging.error(e)
-            sys.exit(0)
+            return None
         for pagenum in range(len(pdf)):
             self.pages[pagenum + 1] = pdf[pagenum]
-        logging.info(f'Processing {self.pdfpath}')
+        if self.pdfpath is not None:
+            logging.info(f'Processing {self.pdfpath}')
+        else:
+            logging.info(f'Processing uploaded file')
 
     def print_pdf_page(self, pagenum):
         logging.info(self.pages[pagenum])

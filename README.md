@@ -8,6 +8,9 @@ into this effort (and help quickly get my finances together) I want to start
 fresh with as little tasks needed as possible. From there, I will expand to
 include the work we were doing, and more.
 
+# Local Run
+Note to self - use conda env python39
+
 # Resulting Dashboard After ETL
 [Link to Tableau Public Dashboard](https://public.tableau.com/views/MyBudgetHighLevel/Budget?:language=en-US&:display_count=n&:origin=viz_share_link)
 
