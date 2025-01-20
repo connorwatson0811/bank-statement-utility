@@ -31,6 +31,9 @@ class ProcessStatement:
         self.year_of_statements = kwargs.get('year_of_statements', '2022')
 
     def read_pdf_file(self):
+        '''
+        Step 1 - read the PDF file and assign to a pdf object
+        '''
         try:
             if self.pdfpath is not None:
                 with open(self.pdfpath, 'rb') as f:
@@ -49,23 +52,26 @@ class ProcessStatement:
         for pagenum in range(len(pdf)):
             self.pages[pagenum + 1] = pdf[pagenum]
         if self.pdfpath is not None:
-            logging.info(f'Processing {self.pdfpath}')
+            print(f'Processing {self.pdfpath}')
         else:
-            logging.info(f'Processing uploaded file')
+            print(f'Processing uploaded file')
 
     def print_pdf_page(self, pagenum):
-        logging.info(self.pages[pagenum])
+        print(self.pages[pagenum])
 
     def pretty_print_page(self, pagenum):
         for line in self.pages[pagenum].split('\n'):
-            logging.info(line)
+            print(line)
 
     def get_page_numbers(self):
+        '''
+        Step 2 - get all the page numbers
+        '''
         return list(sorted(self.pages.keys()))
 
     def print_page_numbers(self):
         for pagenum in sorted(self.pages.keys()):
-            logging.info('Page {}/{}'.format(pagenum, len(self.pages.keys())))
+            print('Page {}/{}'.format(pagenum, len(self.pages.keys())))
 
     def get_pdf_page(self, pagenum):
         return self.pages[pagenum]
@@ -75,6 +81,9 @@ class ProcessStatement:
             of.write(self.get_pdf_page(pagenum))
 
     def process_pdf_page(self, page_num):
+        '''
+        Step 3 - process PDF page based on the bank
+        '''
         current_page_lines = self.get_pdf_page(page_num).split('\n')
         if self.bank_type == 'boa':
             self.process_pdf_page_boa(current_page_lines, page_num)
@@ -82,6 +91,7 @@ class ProcessStatement:
             self.process_pdf_page_chase(current_page_lines, page_num)
 
     def process_pdf_page_chase(self, current_page_lines, pnum):
+        print(f'Checking Chase page num {pnum}')
         num_line_with_transactions = 0
         deposit_or_withdrawal = ""
         for line in current_page_lines:
@@ -104,10 +114,10 @@ class ProcessStatement:
                 # try:
                 transaction_amount = deposit_or_withdrawal + re.search(transaction_regex, line_temp).group().strip("$")
                 # except AttributeError as ae:
-                #     logging.debug(transaction_date)
-                #     logging.debug(line_temp)
-                #     logging.debug(line)
-                #     logging.debug(line[:8])
+                #     print(transaction_date)
+                #     print(line_temp)
+                #     print(line)
+                #     print(line[:8])
                 #     sys.exit(0)
 
                 transaction_description = is_transaction_a_check(re.sub(transaction_regex, "", line_temp).strip())
@@ -117,11 +127,12 @@ class ProcessStatement:
                                                         transaction_amount,
                                                         transaction_category)
         if num_line_with_transactions == 0:
-            logging.debug(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+            print(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
         else:
-            logging.info(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+            print(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
 
     def process_pdf_page_boa(self, current_page_lines, pnum):
+        print(f'Checking BOA page num {pnum}')
         num_line_with_transactions = 0
         for line in current_page_lines:
             line = line.strip()
@@ -132,10 +143,11 @@ class ProcessStatement:
             except Exception as e:
                 continue
             if re.search("[0-9][0-9]/[0-9][0-9]/[0-9][0-9]", line[:8]):
+                print(f'PROCESSING PAGE {pnum}')
                 num_line_with_transactions += 1
                 transaction_date = line[:8]
                 line_temp = line[8:]
-                logging.debug(line_temp)
+                print(f'line_temp: {line_temp}')
                 transaction_regex = r"-?([0-9]+,?)+\.[0-9][0-9]"
                 transaction_amount = re.search(transaction_regex, line_temp).group()
                 transaction_description = is_transaction_a_check(re.sub(transaction_regex, "", line_temp).strip())
@@ -145,9 +157,9 @@ class ProcessStatement:
                                                         transaction_amount,
                                                         transaction_category)
         if num_line_with_transactions == 0:
-            logging.debug(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+            print(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
         else:
-            logging.info(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
+            print(f'Page {pnum} with total {num_line_with_transactions} lines with transactions')
 
     def assign_category_to_transaction(self, desc):
         desc_lower = desc.lower()
@@ -162,7 +174,7 @@ class ProcessStatement:
             return "transaction"
 
     def add_transaction_to_data_dictionary(self, date, desc, amount, catg):
-        logging.debug(f'{date} | {amount} | {desc} | {catg}')
+        print(f'{date} | {amount} | {desc} | {catg}')
         self.transactions['Date'].append(date)
         self.transactions['Description'].append(desc)
         self.transactions['Amount'].append(amount)
@@ -176,6 +188,6 @@ class ProcessStatement:
             transactions_df = self.transactions_df
         try:
             transactions_df.to_csv(out_file)
-            logging.info(f'Saved transactions to {out_file}')
+            print(f'Saved transactions to {out_file}')
         except Exception as e:
             logging.error(e)

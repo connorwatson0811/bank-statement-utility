@@ -11,11 +11,12 @@ import sys
 import pathlib
 from datetime import datetime
 
+date_format = "%m/%d/%y" if st.session_state['bank_type'] == 'boa' else "%m/%d/%Y"
 # Date | Description | Amount | Category | 
 if 'transactions_df' not in st.session_state:
     st.warning('Please parse your bank statements first')
 else:
-    st.session_state['transactions_df']['Date'] = pd.to_datetime(st.session_state['transactions_df']['Date'], format="%m/%d/%y")
+    st.session_state['transactions_df']['Date'] = pd.to_datetime(st.session_state['transactions_df']['Date'], format=date_format)
     
     
     max_date = st.session_state['transactions_df']['Date'].max()

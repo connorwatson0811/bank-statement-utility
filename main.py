@@ -29,7 +29,7 @@ st.markdown(
 )
 
 
-# logger = logging.getLogger('main_logger')
+logger = logging.getLogger('main_logger')
 
 @st.cache_data
 def convert_df_to_csv(df):
@@ -41,6 +41,21 @@ def aggridTableFormatIntColumnWithCommas(table_grid_options_builder, col_name):
         valueFormatter = f"data.{col_name}.toLocaleString('en-US');"
     )
     return table_grid_options_builder
+
+def set_logger_fmt(verbose_logs=False):
+    global logger
+    log_fmt = '%(asctime)s LINE:%(lineno)d %(module)s LEVEL:%(levelname)s %(message)s'
+    if verbose_logs:
+        log_lvl = logging.DEBUG
+    else:
+        log_lvl = logging.INFO
+    logging.basicConfig(level=log_lvl, format=log_fmt)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_lvl)
+    stream_handler.setFormatter(logging.Formatter(log_fmt))
+    logger.addHandler(stream_handler)
+    return
+
 
 def parse_arguments(): # **kwargs
     global logger
@@ -115,6 +130,7 @@ def main():
     file_prefix = config['condensed_filename_prefix']
     transaction_categories = config['categories']
     bank_type = config['bank_type']
+    
     condensed_all_transactions = {'Date': [], 'Description': [], 'Amount': [], 'Category': []}
     logger.debug(f'Output directory is: {out_dir}')
     if not os.path.exists(config['output_directory']):
@@ -124,7 +140,7 @@ def main():
         statement_path = filepath.absolute()
         fname = os.path.basename(statement_path).split(".")[0]
         if os.path.isdir(os.path.abspath(statement_path)):
-            logging.info('Found a directory, skipping...')
+            print('Found a directory, skipping...')
             continue
         statement_parser = process_statement.ProcessStatement(statement_path,
                                                               raw=config['raw_pdf_content'],
@@ -134,7 +150,7 @@ def main():
                                                               year_of_statements=config['year_of_statements'])
         statement_parser.read_pdf_file()
         page_numbers = statement_parser.get_page_numbers()
-        #logging.info(page_numbers)
+        #print(page_numbers)
         if p_num_check > 0:
             # logger.info(f'Processing page #{p_num_check} only')
             output_pagefile_name = os.path.abspath(os.path.join(out_dir, f'{fname}_page_{p_num_check}.txt'))
@@ -163,18 +179,18 @@ def main():
         condensed_all_transactions_df = pd.DataFrame.from_dict(condensed_all_transactions)
         try:
             condensed_all_transactions_df.to_csv(output_file_name)
-            logging.info(f'Saved transactions to {output_file_name}')
+            print(f'Saved transactions to {output_file_name}')
         except Exception as e:
             logging.error(e)
 
-        logging.info(f'Finished parsing statements, please check {out_dir}')
+        print(f'Finished parsing statements, please check {out_dir}')
 
     config['categories'] = transaction_categories
     updated_config_path = in_args.config.replace('config', 'updated_config')
     f = open(updated_config_path, 'w')
     json.dump(config, f, indent=2) #\t
     f.close()
-    logging.info(f'Saved updated config to: {updated_config_path}')
+    print(f'Saved updated config to: {updated_config_path}')
 
 
 
@@ -189,55 +205,66 @@ condense_output = config['condense_output']
 file_prefix = config['condensed_filename_prefix']
 transaction_categories = config['categories']
 bank_type = config['bank_type']
+# bank_type = 'chase'
+st.session_state['bank_type'] = bank_type
+raw_file = config['raw_pdf_content']
+# raw_file = False
+physical_file = config['physical_pdf_content']
+# physical_file = True
 condensed_all_transactions = {'Date': [], 'Description': [], 'Amount': [], 'Category': []}
-with st.spinner(text = 'Preparing transactions...'):
-    if list_of_statements is not None:
-        st.write(len(list_of_statements))
-        if len(list_of_statements) == 1:
-            st.session_state['transactions_df'] = pd.read_csv(list_of_statements[0])
-        else:
-            for statement in list_of_statements:
-                statement_parser = process_statement.ProcessStatement(pdffileobject=statement,
-                                                                    raw=config['raw_pdf_content'],
-                                                                    physical=config['physical_pdf_content'],
-                                                                    categories=transaction_categories,
-                                                                    bank_type=bank_type,
-                                                                    year_of_statements=config['year_of_statements'])
-                statement_parser.read_pdf_file()
-                page_numbers = statement_parser.get_page_numbers()
-                for page_num in page_numbers:
-                    statement_parser.process_pdf_page(page_num)
-                statement_parser.set_dataframe_from_data_dictionary()
-                #if not condense_output:
-                #    output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_transactions.csv'))
-                #    statement_parser.save_transactions_df_to_csv(output_file_name)
-                if condense_output:
-                    condensed_all_transactions['Date'] += statement_parser.transactions['Date']
-                    condensed_all_transactions['Description'] += statement_parser.transactions['Description']
-                    condensed_all_transactions['Amount'] += statement_parser.transactions['Amount']
-                    condensed_all_transactions['Category'] += statement_parser.transactions['Category']
-                transaction_categories = statement_parser.categories
-            if condense_output:
-                #output_file_name = os.path.abspath(os.path.join(out_dir, f'{file_prefix}_transactions.csv'))
-                condensed_all_transactions_df = pd.DataFrame.from_dict(condensed_all_transactions).sort_values(by='Date')
-                csv_download = convert_df_to_csv(condensed_all_transactions_df)
-                if condensed_all_transactions_df.shape[0] > 0:
-                    st.session_state['transactions_df'] = condensed_all_transactions_df
-                    st.download_button('Download Transactions', data=csv_download, file_name=f'{file_prefix}_transactions.csv')
-                # try:
-                #     condensed_all_transactions_df.to_csv(output_file_name)
-                #     logging.info(f'Saved transactions to {output_file_name}')
-                # except Exception as e:
-                #     logging.error(e)
+verbose_logging = config['verbose_logging']
+set_logger_fmt(verbose_logging)
+    
 
-                # logging.info(f'Finished parsing statements, please check {out_dir}')
-            if 'transactions_df' in st.session_state:
-                config['categories'] = transaction_categories
-                updated_config_path = config_path.replace('config', f"updated_config_{datetime.now().strftime('%Y%m%d')}")
-                f = open(updated_config_path, 'w')
-                json.dump(config, f, indent=2) #\t
-                f.close()
-                logging.info(f'Saved updated config to: {updated_config_path}')
+print(bank_type, raw_file, physical_file, verbose_logging, sep='\n')
+with st.spinner(text = 'Preparing transactions...'):
+    if list_of_statements is not None and 'transactions_df' not in st.session_state:
+        st.write(len(list_of_statements))
+        # if len(list_of_statements) == 1:
+        #     st.session_state['transactions_df'] = pd.read_csv(list_of_statements[0])
+        # else:
+        for statement in list_of_statements:
+            statement_parser = process_statement.ProcessStatement(pdffileobject=statement,
+                                                                raw=raw_file,
+                                                                physical=physical_file,
+                                                                categories=transaction_categories,
+                                                                bank_type=bank_type,
+                                                                year_of_statements=config['year_of_statements'])
+            statement_parser.read_pdf_file()
+            page_numbers = statement_parser.get_page_numbers()
+            for page_num in page_numbers:
+                statement_parser.process_pdf_page(page_num)
+            statement_parser.set_dataframe_from_data_dictionary()
+            #if not condense_output:
+            #    output_file_name = os.path.abspath(os.path.join(out_dir, f'{fname}_transactions.csv'))
+            #    statement_parser.save_transactions_df_to_csv(output_file_name)
+            if condense_output:
+                condensed_all_transactions['Date'] += statement_parser.transactions['Date']
+                condensed_all_transactions['Description'] += statement_parser.transactions['Description']
+                condensed_all_transactions['Amount'] += statement_parser.transactions['Amount']
+                condensed_all_transactions['Category'] += statement_parser.transactions['Category']
+            transaction_categories = statement_parser.categories
+        if condense_output:
+            #output_file_name = os.path.abspath(os.path.join(out_dir, f'{file_prefix}_transactions.csv'))
+            condensed_all_transactions_df = pd.DataFrame.from_dict(condensed_all_transactions).sort_values(by='Date')
+            csv_download = convert_df_to_csv(condensed_all_transactions_df)
+            if condensed_all_transactions_df.shape[0] > 0:
+                st.session_state['transactions_df'] = condensed_all_transactions_df
+                st.download_button('Download Transactions', data=csv_download, file_name=f'{file_prefix}_transactions.csv')
+            # try:
+            #     condensed_all_transactions_df.to_csv(output_file_name)
+            #     print(f'Saved transactions to {output_file_name}')
+            # except Exception as e:
+            #     logging.error(e)
+
+            # print(f'Finished parsing statements, please check {out_dir}')
+        if 'transactions_df' in st.session_state:
+            config['categories'] = transaction_categories
+            updated_config_path = config_path.replace('config', f"updated_config_{datetime.now().strftime('%Y%m%d')}")
+            f = open(updated_config_path, 'w')
+            json.dump(config, f, indent=2) #\t
+            f.close()
+            print(f'Saved updated config to: {updated_config_path}')
 
 if 'transactions_df' in st.session_state:
     st.write(f"Total number of rows in transactions DF: {st.session_state['transactions_df'].shape[0]}")
