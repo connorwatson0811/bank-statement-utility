@@ -211,10 +211,10 @@ with st.spinner(text = 'Preparing transactions...'):
             st.session_state['transactions_df'].reset_index(drop=True, inplace=True)
             config['categories'] = transaction_categories
             updated_config_path = config_path.replace('config', f"updated_config_{datetime.now().strftime('%Y%m%d')}")
-            f = open(updated_config_path, 'w')
-            json.dump(config, f, indent=2) #\t
-            f.close()
-            print(f'Saved updated config to: {updated_config_path}')
+            # f = open(updated_config_path, 'w')
+            # json.dump(config, f, indent=2) #\t
+            # f.close()
+            # print(f'Saved updated config to: {updated_config_path}')
 
 if 'transactions_df' in st.session_state:
     st.write(f"Total number of rows in transactions DF: {st.session_state['transactions_df'].shape[0]}")
