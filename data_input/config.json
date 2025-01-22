@@ -1,8 +1,6 @@
 {
   "example_json": "This is only the template, please configure variables properly",
   "statements_path_test": "C:\\Users\\watson\\Documents\\DataSets\\StatementsPDFs",
-  "statements_path": "C:\\Users\\watson\\Documents\\taxes_watson\\taxes_watson_2023\\debit_2023",
-  "statements_path_mom": "C:\\Users\\watson\\Documents\\taxes_chav\\taxes_chav_2021\\debit_chav_2021",
   "output_directory": "C:\\Users\\watson\\Documents\\DataSets\\Statements_Parsed\\2023",
   "bank_type": "chase",
   "condense_output": true,
@@ -274,10 +272,6 @@
       "trube pet boutique",
       "chewy"
     ],
-    "family": [
-      "janet s chavarria",
-      "stephen dobry"
-    ],
     "gifts": [
       "zelle transfer",
       "venmo"
@@ -326,7 +320,6 @@
       "las palma",
       "muji",
       "roberts variety",
-      "franklin e chavarria",
       "mcgoverns",
       "robinhood",
       "ikea",
