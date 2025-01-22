@@ -89,6 +89,8 @@ class ProcessStatement:
             self.process_pdf_page_boa(current_page_lines, page_num)
         elif self.bank_type == 'chase':
             self.process_pdf_page_chase(current_page_lines, page_num)
+        elif self.bank_type == 'Demo':
+            self.process_pdf_page_boa(current_page_lines, page_num)
 
     def process_pdf_page_chase(self, current_page_lines, pnum):
         print(f'Checking Chase page num {pnum}')

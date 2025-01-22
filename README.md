@@ -34,8 +34,8 @@ include the work we were doing, and more.
 #### Local Run
 Note to self - use conda env python39
 conda activate python39
-cd ... bank-statement-utility
-streamlit run main.py
+cd ... personal-budgeting-app
+streamlit run app_home.py
 
 
 ## 3. Future Progress <a name="future-progress"></a>
