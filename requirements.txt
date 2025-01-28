@@ -1,6 +1,5 @@
 numpy
 pandas
-pdftotext
 plotly
 pytz
 scipy
@@ -9,3 +8,4 @@ streamlit-aggrid
 tzdata
 tzlocal
 urllib3
+pdftotext
