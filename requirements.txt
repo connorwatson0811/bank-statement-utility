@@ -1,6 +1,5 @@
 numpy
 pandas
-python-poppler
 pdftotext
 plotly
 pytz
