@@ -11,7 +11,10 @@ import sys
 import pathlib
 from datetime import datetime
 
-date_format = "%m/%d/%y" if st.session_state['bank_type'] in ('boa', 'Demo') else "%m/%d/%Y"
+if 'bank_type' in st.session_state:
+    date_format = "%m/%d/%y" if st.session_state['bank_type'] in ('boa', 'Demo') else "%m/%d/%Y"
+else:
+    date_format = "%m/%d/%y"
 # Date | Description | Amount | Category | 
 if 'transactions_df' not in st.session_state:
     st.warning('Please parse your bank statements first')
